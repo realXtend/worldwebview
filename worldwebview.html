@@ -3,7 +3,7 @@
 <html>
   <head>
     <title>naali online</title>
-    <script src="httpreq.js" type="text/javascript"></script>
+    <!-- script src="httpreq.js" type="text/javascript"></script-->
     <script type="application/x-javascript">
 		
 		// todo:
@@ -100,6 +100,7 @@
 			return now.getTime();
 		}
         
+        /* not needed with opensim
         function get_screenshot_indirect() { //gets first a url for the img, to allow load sharing on server
             var quat = euler_to_quat(yaw, pitch, roll);
             var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w;
@@ -110,7 +111,7 @@
              //log("img url: " + req + " - " + imgurl);
              get_screenshot(imgurl, starttime);
             })
-        }
+        }*/
         
         function get_screenshot_direct() {
             var quat = euler_to_quat(yaw, pitch, roll);
