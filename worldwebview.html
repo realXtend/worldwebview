@@ -26,6 +26,7 @@
 		//var screenshot_server = "http://192.168.0.177:28008"; // playsign's test machine
                 //var screenshot_server = "http://localhost:9000"; //local opensim
                 var screenshot_server = "http://grid004.3dhosting.de:9005/worldview/e4d81017-0265-4242-920f-904566c76439" //Melanie test sim
+                //var screenshot_server = "http://grid004.3dhosting.de:9000/worldview/c7ace13d-d23e-41c9-b3b5-f26e008260bc"
 
 		var canvas;			// screenshot drawing canvas
 		var ctx;				// screenshot drawing context
@@ -115,7 +116,10 @@
         
         function get_screenshot_direct() {
             var quat = euler_to_quat(yaw, pitch, roll);
-            var request_uri = screenshot_server + screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w + "&camyaw=" + yaw + "&campitch=" + pitch + "&camroll=" + roll + "&rotX=0.001&rotY=0&rotZ=-0.001&fov=60&width=800&height=600&usetex=false";
+            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&rotX=" + pitch*deg2rad + "&rotY=0&rotZ=-0.001&fov=60&width=800&height=600&usetex=false";
+             //"&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w + 
+             //+ "&camyaw=" + yaw + "&campitch=" + pitch + "&camroll=" + roll + 
+
             starttime = now_ms();
             get_screenshot(request_uri, starttime);
         }
