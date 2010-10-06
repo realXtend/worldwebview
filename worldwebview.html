@@ -24,7 +24,8 @@
 		//var screenshot_server = "http://127.0.0.1:28008";
 		//var screenshot_server = "http://www.playsign.fi:28008";
 		//var screenshot_server = "http://192.168.0.177:28008"; // playsign's test machine
-                var screenshot_server = "http://localhost:9000"; //local opensim
+                //var screenshot_server = "http://localhost:9000"; //local opensim
+                var screenshot_server = "http://grid004.3dhosting.de:9000/worldview/c7ace13d-d23e-41c9-b3b5-f26e008260bc" //some Melanie sim
 
 		var canvas;			// screenshot drawing canvas
 		var ctx;				// screenshot drawing context
@@ -101,7 +102,7 @@
         
         function get_screenshot_indirect() { //gets first a url for the img, to allow load sharing on server
             var quat = euler_to_quat(yaw, pitch, roll);
-            var request_uri = screenshot_server + "/renderimgurl?camposx=" + x + "&camposy=" + y + "&camposz=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w;
+            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w;
             //log(request_uri);
 		      starttime = now_ms();
             sendRequest(request_uri, function(req) {
@@ -113,7 +114,7 @@
         
         function get_screenshot_direct() {
             var quat = euler_to_quat(yaw, pitch, roll);
-            var request_uri = screenshot_server + "/renderimg/?camposx=" + x + "&camposy=" + y + "&camposz=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w + "&camyaw=" + yaw + "&campitch=" + pitch + "&camroll=" + roll;
+            var request_uri = screenshot_server + screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w + "&camyaw=" + yaw + "&campitch=" + pitch + "&camroll=" + roll + "&rotX=0.001&rotY=0&rotZ=-0.001&fov=60&width=800&height=600&usetex=false";
             starttime = now_ms();
             get_screenshot(request_uri, starttime);
         }
@@ -144,7 +145,7 @@
 
 		var map_img = new Image();
 		function get_map() {
-			var map_uri = screenshot_server + "/renderimg/?camposx=128&camposy=128&camposz=260&camortx=0&camorty=0&camortz=0&camortw=1";
+			var map_uri = screenshot_server + "?posX=127.5&posY=127.5&posZ=260&camortx=0&camorty=0&camortz=0&camortw=1+&rotX=0&rotY=0&rotZ=-0.027415567780803774&fov=60&width=256&height=256&usetex=false";
 			log("loading <a href=\"" + map_uri + "\">map</a>");
 			map_img.src = map_uri;
 			map_img.onerror = function() {
