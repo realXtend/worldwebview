@@ -20,12 +20,12 @@
 		//		- automatic current view updating (update view every n seconds)
 		//		- get knowledge about the part of the scene the image represents (distance from camera and area?)
 
-		// by default try to get screenshots from a local Naali
-		//var screenshot_server = "http://127.0.0.1:28008";
+		// by default try to get screenshots from a local Tundra
+		var screenshot_server = "http://127.0.0.1:8886/renderimg";
 		//var screenshot_server = "http://www.playsign.fi:28008";
 		//var screenshot_server = "http://192.168.0.177:28008"; // playsign's test machine
+
                 //var screenshot_server = "http://localhost:9000"; //local opensim
-                var screenshot_server = "http://localhost:9000/worldview/3508cee7-75cc-4dea-8a6b-e68f5a18d0fe"
                 //var screenshot_server = "http://grid004.3dhosting.de:9005/worldview/e4d81017-0265-4242-920f-904566c76439" //Melanie test sim
                 //var screenshot_server = "http://grid004.3dhosting.de:9000/worldview/c7ace13d-d23e-41c9-b3b5-f26e008260bc"
                 //var screenshot_server = "http://nebadon2025.homeftp.net:19500/worldview/7a4a0164-3d76-8fe2-187f-171001210001"
@@ -36,9 +36,9 @@
 		var mapelem;		// map drawing canvas
 		var cons;			// text console (a div)
 
-		var x = 70;			// initial starting position
-		var y = 163;
-		var z = 72;
+		var x = 0;			// initial starting position
+		var y = 10;
+		var z = 60;
 
 		var w = 800;  // screenshot size on page
 		var h = 600; 
@@ -59,7 +59,10 @@
 			my = event.pageY;
 		}  
 
-		function euler_to_quat(yaw, pitch, roll) {
+                //this worked with tundra1
+		//function euler_to_quat(yaw, pitch, roll) {
+                //this is changed for tundra2 compat
+		function euler_to_quat(pitch, yaw, roll) {
 			log("current angle is yaw=" + yaw + ", pitch=" + pitch + ", roll=" + roll);
 			yaw *= deg2rad;
 			pitch *= deg2rad;
@@ -103,26 +106,26 @@
 			return now.getTime();
 		}
         
-        /* not needed with opensim
         function get_screenshot_indirect() { //gets first a url for the img, to allow load sharing on server
             var quat = euler_to_quat(yaw, pitch, roll);
-            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w;
-            //log(request_uri);
-		      starttime = now_ms();
+            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&ortX=" + quat.x + "&ortY=" + quat.y + "&ortZ=" + quat.z + "&ortW=" + quat.w;
+            log(request_uri);
+	    starttime = now_ms();
             sendRequest(request_uri, function(req) {
-             var imgurl = req.responseText;
-             //log("img url: " + req + " - " + imgurl);
-             get_screenshot(imgurl, starttime);
+                var imgurl = req.responseText;
+                log("img url: " + req + " - " + imgurl);
+                get_screenshot(imgurl, starttime);
             })
-        }*/
+        }
         
         function get_screenshot_direct() {
             var quat = euler_to_quat(yaw, pitch, roll);
-            var dirx = quat.x / quat.w;
+            /*var dirx = quat.x / quat.w;
             var diry = quat.y / quat.w;
-            var dirz = quat.z / quat.w;
-            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z + "&rotX=" + dirx + "&rotY=" + diry + "&rotZ=" + dirz + "&fov=60&width=800&height=600&usetex=false";
-             //"&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w + 
+            var dirz = quat.z / quat.w;*/
+            var request_uri = screenshot_server + "?posX=" + x + "&posY=" + y + "&posZ=" + z 
+                //+ "&rotX=" + dirx + "&rotY=" + diry + "&rotZ=" + dirz + "&fov=60&width=800&height=600&usetex=false";
+            request_uri += "&camortx=" + quat.x + "&camorty=" + quat.y + "&camortz=" + quat.z + "&camortw=" + quat.w;
              //+ "&camyaw=" + yaw + "&campitch=" + pitch + "&camroll=" + roll + 
 
             starttime = now_ms();
@@ -155,16 +158,22 @@
 
 		var map_img = new Image();
 		function get_map() {
-			var map_uri = screenshot_server + "?posX=127.5&posY=127.5&posZ=260&camortx=0&camorty=0&camortz=0&camortw=1+&rotX=0&rotY=0&rotZ=-0.027415567780803774&fov=60&width=256&height=256&usetex=false";
+			var map_uri = screenshot_server + "?posX=0&posY=100&posZ=0&ortX=0&ortY=0.7&ortZ=0.7&ortW=0" //+&rotX=0&rotY=0&rotZ=-0.027415567780803774&fov=60&width=256&height=256&usetex=false";
 			log("loading <a href=\"" + map_uri + "\">map</a>");
-			map_img.src = map_uri;
-			map_img.onerror = function() {
-				alert("Failed to get a map screenshot from " + screenshot_server + "\n\nCheck that the server is correct, you indeed have Naali running there, and have uncommented the webserver module in the beginning of pymodules/autoload.py.");
-			}
-			map_img.onload = function() {
+		       //use indirect loading
+                       sendRequest(map_uri, function(req) {
+                           var mapurl = req.responseText;
+                           log("map url: " + req + " - " + mapurl);
+                           map_img.src = mapurl;
+			   map_img.onload = function() {
 				log("map loaded");
 				map.drawImage(this, 0, 0, 300, 300);
-			}
+                           }
+                       });
+                       /*map_img.src = map_uri;
+			map_img.onerror = function() {
+				alert("Failed to get a map screenshot from " + screenshot_server + "\n\nCheck that the server is correct, you indeed have Naali running there, and have uncommented the webserver module in the beginning of pymodules/autoload.py.");
+			}*/
 		}
 
 		// draw a line where i'm looking towards
@@ -186,7 +195,7 @@
 			var mx = Math.floor(x/256 * 300);
 			var my = Math.floor(y/256 * 300);
 			my = 300 - my;
-			if(map_img.complete) {
+		        if(map_img.complete) {
 				map.drawImage(map_img, 0, 0, 300, 300);
 			}
 			map.strokeStyle = "rgba(0,0,0,0.8)";
@@ -199,8 +208,8 @@
 
 		function update() { 
 			// mouse_turn(mx, my); // last seen mouse position
-			get_screenshot_direct(); //naali main thread serves the images too - ok if you have good FPS
-          //get_screenshot_indirect(); //when you have a separate httpd serving the images, not Naali directly            
+			//get_screenshot_direct(); //naali main thread serves the images too - ok if you have good FPS
+                        get_screenshot_indirect(); //when you have a separate httpd serving the images, not Naali directly            
 			update_map();
 		}
 
@@ -244,7 +253,9 @@
 			var wx = mx/w; // 0..1
 			var wy = my/h; 
 			x = (s * wx);
-			y = s - (s * wy);
+			z = s - (s * wy);
+                        x -= 128; //XXX TODO: this is still not right for Tundra2
+                        z -= 128;
 			log("moved to x=" + x + ", y=" + y);
 			update();
 		}
@@ -262,8 +273,8 @@
 			var dx = Math.sin(pitch*deg2rad) * speed;
 			var dy = Math.cos(pitch*deg2rad) * speed;
 			log("walking " + speed);
-			x = x + dx;
-			y = y - dy;
+			x = x - dx;
+			z = z + dy;
 			update();
 		}
 
@@ -285,8 +296,8 @@
 				case 39: strafe(10); break; 
 
 				// space/c move up/down				
-				case 32: z += 4; log("height " + z); update(); break; // space moves up (as in naali)
-				case 67: z -= 4; log("height " + z); update(); break; // c moves down (as in naali)
+				case 32: y += 4; log("height " + z); update(); break; // space moves up (as in naali)
+				case 67: y -= 4; log("height " + z); update(); break; // c moves down (as in naali)
 
 				default:
 					log("unmapped key " + key);
@@ -325,8 +336,9 @@ function sendRequest(url,callback,postData) {
 	req.onreadystatechange = function () {
 		if (req.readyState != 4) return;
 		if (req.status != 200 && req.status != 304) {
-//			alert('HTTP error ' + req.status);
-			return;
+		    //alert('HTTP error ' + req.status);
+                    log('ERROR: ' + url + ", " + req.status);
+		    return;
 		}
 		callback(req);
 	}
