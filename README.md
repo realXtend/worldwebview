@@ -25,7 +25,8 @@ https://github.com/antont/tundra/blob/httpserver/bin/pyplugins/httpserver/config
 exactly is explain below in 'web server for images')
 
 That branch has the server plugin enabled by default, in plugins.xml, which is always loaded:
-<pyplugin path="httpserver/tundrahttphandler.py" />  <!-- to create image frames, render server -->
+
+    <pyplugin path="httpserver/tundrahttphandler.py" />  <!-- to create image frames, render server -->
 
 If you want to enable the server only conditionally (for example for
 servers only and not for clients too), put that line to a different
@@ -51,7 +52,7 @@ server on this line and load the html from where you want: clienthtml
 By default, the web client connects to a local tundra server:
 (in https://github.com/realXtend/worldwebview/blob/master/worldwebview.html#L24)
 
-   	var screenshot_server = "http://127.0.0.1:8886/renderimg";
+    var screenshot_server = "http://127.0.0.1:8886/renderimg";
 
 Change that to your public Internet address to make it work on the net.
 
