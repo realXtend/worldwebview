@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>three.js canvas - panorama demo</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                background-color: rgb(200,200,200);
+                margin: 0px;
+                overflow: hidden;
+		position: relative;
+            }
+
+            #info {
+                position: absolute;
+                top: 0px; width: 100%;
+                color: #ffffff;
+                padding: 5px;
+                font-family:Monospace;
+                font-size:13px;
+                font-weight: bold;
+                text-align:center;
+            }
+
+	    #map {
+		position: absolute;
+		display: block;
+		top: 5px;
+		right: 5px;
+		width: 200px;
+		height: 200px;
+	    }
+
+            a {
+                color: #ffffff;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div id="container"></div>
+        <div id="info">realXtend WebView</div>
+	<div id="map"><canvas id="mapCanvas" height="200" width="200"></canvas></div>
+
+        <script src="../three.js//build/three.min.js"></script>
+
+    <script>
+
+
+var XMLHttpFactories = [
+    function () {return new XMLHttpRequest()},
+    function () {return new ActiveXObject("Msxml2.XMLHTTP")},
+    function () {return new ActiveXObject("Msxml3.XMLHTTP")},
+    function () {return new ActiveXObject("Microsoft.XMLHTTP")}
+];
+
+
+
+var camera, scene, renderer;
+var texture_placeholder,
+cube, isUserInteracting = false,
+onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+lon = 0, onMouseDownLon = 0, size,
+lat = 0, onMouseDownLat = 0, mapImage = new Image(),
+phi = 0, theta = 0, mesh, materials = [], mapLoaded = false, mapElement
+target = new THREE.Vector3();
+
+var screenshot_server = 'http://192.168.1.117:8886';
+var screenshot_server = 'http://192.168.100.47:8886';
+//var screenshot_server = 'http://10.20.209.3:8886';
+
+var positions = [[86, -50, 164, 180],
+		 [0, 0, 0, 90],
+		 [0, -10, 0, 45],
+		 [106, -70, 122, 90]];
+var index = 0;
+
+init();
+
+function init() {
+
+    var container;
+
+    container = document.getElementById('container');
+
+    get_map();
+
+    //set image size could detech if mobile and use lower resolution
+    size = 512;
+    
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+
+    scene = new THREE.Scene();
+
+    texture_placeholder = document.createElement('canvas');
+    texture_placeholder.width = 128;
+    texture_placeholder.height = 128;
+
+    var context = texture_placeholder.getContext('2d');
+    context.fillStyle = 'rgb(200, 200, 200)';
+    context.fillRect(0, 0, texture_placeholder.width, texture_placeholder.height);
+
+    cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, 19, 19, 19, materials), new THREE.MeshFaceMaterial());
+    cube.scale.x = - 1;
+    scene.add(cube);
+
+    renderer = new THREE.CanvasRenderer();
+    //renderer = new THREE.WebGLRenderer();
+    
+    changePlace(positions[0][0], positions[0][1], positions[0][2], positions[0][3]);
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    container.appendChild(renderer.domElement);
+
+    container.addEventListener('mousedown', onDocumentMouseDown, false);
+    container.addEventListener('mousemove', onDocumentMouseMove, false);
+    container.addEventListener('mouseup', onDocumentMouseUp, false);
+    container.addEventListener('mousewheel', onDocumentMouseWheel, false);
+
+    container.addEventListener('touchstart', onDocumentTouchStart, false);
+    container.addEventListener('touchmove', onDocumentTouchMove, false);
+
+    document.addEventListener('keyup', onDocumentKeyUp, false);
+
+    mapElement = document.getElementById('mapCanvas');
+    mapElement.addEventListener("click", onMapClick, false);
+
+    window.addEventListener('resize', onWindowResize, false);
+
+}
+
+function d(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+function onMapClick(event) {
+    event.preventDefault();
+
+    if (!event)
+	event = window.event;
+    
+    //IE9 & Other Browsers
+    if (event.stopPropagation) {
+	event.stopPropagation();
+    }
+    //IE8 and Lower
+    else {
+	event.cancelBubble = true;
+    }
+    
+    var mx = event.pageX - (window.outerWidth - 205);
+    var my = event.pageY - 5;
+    var hitIndex = null;
+    for (var i = 0; i < positions.length; i++) {
+    	var pos = positions[i];
+    	var p = world2map(new THREE.Vector2(pos[0], pos[2]));
+	if (d(mx, my, p.x, p.y) <= 5) {
+	    hitIndex = i;
+	}
+    }
+    if (hitIndex !== null) {
+	index = hitIndex;
+	var p = positions[index];
+	changePlace(p[0], p[1], p[2], p[3]);
+    }
+}
+
+function world2map(wCoords) {
+    mCoords = new THREE.Vector2();
+    mCoords.x = -0.3787 * wCoords.x + 132.5680;
+    mCoords.y = -0.3855 * wCoords.y + 163.2289;
+
+    return mCoords;
+}
+
+function get_map() {
+    var map_uri = screenshot_server + "/renderimg?posX=86&posY=164&posZ=164&ortX=0&ortY=0.7071067811865476&ortZ=0.7071067811865476&ortW=0"
+    console.log("loading <a href=\"" + map_uri + "\">map</a>");
+    //use indirect loading
+    sendRequest(map_uri, function(req) {
+        var mapurl = req.responseText;
+        console.log("map url: " + req + " - " + mapurl);
+	map_img = new Image();
+	map_img.onload = function() {
+	    mapImage = map_img;
+	    mapLoaded = true;
+	}
+        map_img.src = mapurl;
+    });
+}
+
+function drawMap(x, y, angle) {
+    var v = world2map(new THREE.Vector2(x, y));
+    var x = v.x;
+    var y = v.y;
+
+    //x, y is the center point on map coortinates
+    //angle is the way we roll
+    var canvas = document.getElementById('mapCanvas');
+    var ctx = canvas.getContext('2d');
+
+    //draw map
+    if (mapLoaded) {
+	ctx.drawImage(mapImage, 0, 0, 200, 200);
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.translate(-x, -y);
+    //draw arrow
+    ctx.beginPath();
+    //stem
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x, y + 20);
+    //left thiungy
+    ctx.moveTo(x - 5, y - 15);
+    ctx.lineTo(x, y - 20);
+    //right thungy
+    ctx.moveTo(x + 5, y - 15);
+    ctx.lineTo(x, y - 20);
+
+    ctx.restore();
+
+    //circles
+    for (var i = 0; i < positions.length; i++) {
+    	var pos = positions[i];
+    	var p = world2map(new THREE.Vector2(pos[0], pos[2]));
+	ctx.moveTo(p.x + 5, p.y);
+    	ctx.arc(p.x, p.y, 5, 0, Math.PI * 2, true); 
+    }
+
+    ctx.stroke();
+    ctx.closePath();
+
+}
+
+function loadMaterials(baseUrl) {
+    console.log('Loading materials from ' + baseUrl);
+    var fileNames = ['nx.png', 'px.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']
+    for (var i in fileNames) {
+	cube.geometry.materials[i] = loadTexture(baseUrl + fileNames[i])
+    }
+}
+
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    render();
+}
+
+function loadTexture(path) {
+
+    var texture = new THREE.Texture(texture_placeholder);
+    var material = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
+
+    var image = new Image();
+    image.onload = function () {
+        texture.needsUpdate = true;
+        material.map.image = this;
+
+        render();
+
+    };
+    image.src = path;
+
+    return material;
+}
+
+function changePlace(x, y, z, rotY) {
+    url = screenshot_server + "/cubeimg?posX=" + x + "&posY=" + y + "&posZ=" + z;
+    url += '&res=' + size;
+    
+    //FIXME set camera rotation
+    sendRequest(url, function(req) {
+	var imageBaseUrl = req.responseText;
+	console.log('loading from ' + imageBaseUrl);
+	loadMaterials(imageBaseUrl);
+    });
+    lon = rotY * Math.PI / 180;
+    lat = 0;
+    render();
+}
+
+function onDocumentKeyUp(event) {
+    if (event.keyCode == 78) {
+	index = (index + 1) % positions.length;
+	var p = positions[index]
+	changePlace(p[0], p[1], p[2], p[3]);
+    }
+}
+
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+    console.log('Document hit');
+
+    isUserInteracting = true;
+
+    onPointerDownPointerX = event.clientX;
+    onPointerDownPointerY = event.clientY;
+
+    onPointerDownLon = lon;
+    onPointerDownLat = lat;
+
+}
+
+function onDocumentMouseMove(event) {
+
+    if (isUserInteracting) {
+
+        lon = (onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon;
+        lat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+        render();
+
+    }
+
+}
+
+function onDocumentMouseUp(event) {
+
+    isUserInteracting = false;
+    render();
+
+}
+
+function onDocumentMouseWheel(event) {
+
+    camera.fov -= event.wheelDeltaY * 0.05;
+    camera.updateProjectionMatrix();
+
+    render();
+
+}
+
+
+function onDocumentTouchStart(event) {
+
+    if (event.touches.length == 1) {
+
+        event.preventDefault();
+
+        onPointerDownPointerX = event.touches[ 0 ].pageX;
+        onPointerDownPointerY = event.touches[ 0 ].pageY;
+
+        onPointerDownLon = lon;
+        onPointerDownLat = lat;
+
+    }
+
+}
+
+function onDocumentTouchMove(event) {
+
+    if (event.touches.length == 1) {
+
+        event.preventDefault();
+
+        lon = (onPointerDownPointerX - event.touches[0].pageX) * 0.1 + onPointerDownLon;
+        lat = (event.touches[0].pageY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+
+        render();
+
+    }
+
+}
+
+function render() {
+    console.log('lon', lon, 'lat', lat);
+    lat = Math.max(- 85, Math.min(85, lat));
+    phi = (90 - lat) * Math.PI / 180;
+    theta = lon * Math.PI / 180;
+
+    target.x = 500 * Math.sin(phi) * Math.cos(theta);
+    target.y = 500 * Math.cos(phi);
+    target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+    camera.lookAt(target);
+
+    renderer.render(scene, camera);
+    
+    drawMap(positions[index][0], positions[index][2], theta);
+
+}
+
+//from http://www.quirksmode.org/js/xmlhttp.html
+function sendRequest(url,callback,postData) {
+    var req = createXMLHTTPObject();
+    if (!req) return;
+    var method = (postData) ? "POST" : "GET";
+    req.open(method,url,true);
+    //req.setRequestHeader('User-Agent','XMLHTTP/1.0');
+    if (postData)
+	req.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+    req.onreadystatechange = function () {
+	if (req.readyState != 4) return;
+	if (req.status != 200 && req.status != 304) {
+	    //alert('HTTP error ' + req.status);
+            console.log('ERROR: ' + url + ", " + req.status);
+	    return;
+	}
+	callback(req);
+    }
+    if (req.readyState == 4) return;
+    req.send(postData);
+}
+
+function createXMLHTTPObject() {
+    var xmlhttp = false;
+    for (var i=0;i<XMLHttpFactories.length;i++) {
+	try {
+	    xmlhttp = XMLHttpFactories[i]();
+	}
+	catch (e) {
+	    continue;
+	}
+	break;
+    }
+    return xmlhttp;
+}
+
+        </script>
+    </body>
+</html>
