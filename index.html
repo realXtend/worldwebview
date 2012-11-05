@@ -276,16 +276,16 @@ function loadTexture(path) {
 }
 
 function changePlace(x, y, z, rotY) {
+    console.log('Change place', x, y, z, rotY);   
     url = screenshot_server + "/cubeimg?posX=" + x + "&posY=" + y + "&posZ=" + z;
     url += '&res=' + size;
-    
-    //FIXME set camera rotation
+
     sendRequest(url, function(req) {
 	var imageBaseUrl = req.responseText;
 	console.log('loading from ' + imageBaseUrl);
 	loadMaterials(imageBaseUrl);
     });
-    lon = rotY * Math.PI / 180;
+    lon = rotY;
     lat = 0;
     render();
 }
@@ -373,7 +373,7 @@ function onDocumentTouchMove(event) {
 }
 
 function render() {
-    console.log('lon', lon, 'lat', lat);
+    console.log('render lon', lon, 'lat', lat);
     lat = Math.max(- 85, Math.min(85, lat));
     phi = (90 - lat) * Math.PI / 180;
     theta = lon * Math.PI / 180;
