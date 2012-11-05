@@ -67,7 +67,7 @@ phi = 0, theta = 0, mesh, materials = [], mapLoaded = false, mapElement
 target = new THREE.Vector3();
 
 var screenshot_server = 'http://192.168.1.117:8886';
-var screenshot_server = 'http://192.168.100.47:8886';
+//var screenshot_server = 'http://192.168.100.47:8886';
 //var screenshot_server = 'http://10.20.209.3:8886';
 
 var positions = [[86, -50, 164, 180],
@@ -300,7 +300,6 @@ function onDocumentKeyUp(event) {
 
 function onDocumentMouseDown(event) {
     event.preventDefault();
-    console.log('Document hit');
 
     isUserInteracting = true;
 
@@ -373,7 +372,6 @@ function onDocumentTouchMove(event) {
 }
 
 function render() {
-    console.log('render lon', lon, 'lat', lat);
     lat = Math.max(- 85, Math.min(85, lat));
     phi = (90 - lat) * Math.PI / 180;
     theta = lon * Math.PI / 180;
