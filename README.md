@@ -12,14 +12,15 @@ To use with that, you need Tundra with Python support (default on
 Linux, requires working with an own build on Mac and Windows
 currently).
 
-Pull the feature branch from: https://github.com/antont/tundra/blob/httpserver/
+Pull the feature branch from: https://github.com/therauli/tundra/blob/httpserver/
 
 (it includes a little Quat setting py api support func in c++ so
-recompile is needed -- otherwise is just two py files that only depend
-on the py stdlib)
+recompile is needed it also has a "custom" screencapturing function
+used in panorama viewer -- otherwise is just two py files that only
+depend on the py stdlib)
 
 For server config, copy the template file:
-https://github.com/antont/tundra/blob/httpserver/bin/pyplugins/httpserver/config.py.template
+https://github.com/therauli/tundra/blob/httpserver/bin/pyplugins/httpserver/config.py.template
 
 .. to config.py in the same dir, and edit the img url and path (how
 exactly is explain below in 'web server for images')
@@ -33,8 +34,11 @@ servers only and not for clients too), put that line to a different
 tundra plugin xml (e.g. a separate httpserver.xml one -- you can load
 many from the cmdline at startup).
 
-The web client
+The web clients
 --------------
+
+WorldWebViewer
+______________
 
 Get a copy of worldwebview.html from here, for example by cloning this repository.
 
@@ -55,6 +59,15 @@ By default, the web client connects to a local tundra server:
     var screenshot_server = "http://127.0.0.1:8886/renderimg";
 
 Change that to your public Internet address to make it work on the net.
+
+WorldPanoramaViewer
+___________________
+
+Get a copy of worldpanoramaview.html and three.js r52 should work you
+can get three.js from http://mrdoob.github.com/three.js/)
+
+By default the web client will try connect some test server in a local
+network :) Change the line https://github.com/realXtend/worldwebview/blob/master/worldpanoramaview.html#L69 to your servers address (unlike in worldwebview don't add the renderimg/ or anything)
 
 Web server for images
 ---------------------
