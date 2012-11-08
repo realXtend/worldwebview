@@ -54,8 +54,8 @@
 	<div id="button"><form name="res"><button name="resolution" onClick="return handleClick();">Switch to highres</button></form></div>
 	<div id="map"><canvas id="mapCanvas" height="200" width="200"></canvas></div>
     
-        <script src="../three.js/build/three.js"></script>
-        <script src="../three.js/examples/js/Detector.js"></script>
+        <script src="three.min.js"></script>
+        <script src="Detector.js"></script>
 
 
     <script>
@@ -78,7 +78,7 @@ var camera, scene, renderer;
 var texture_placeholder,
 cube, isUserInteracting = false,
 onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-lon = 0, onMouseDownLon = 0, size,
+lon = 0, onMouseDownLon = 0, size = 512,
 lat = 0, onMouseDownLat = 0, mapImage = new Image(),
 phi = 0, theta = 0, mesh, mapLoaded = false, mapElement
 target = new THREE.Vector3();
@@ -90,9 +90,11 @@ for (var i = 0; i < 6; i++) {
     materials.push(material)
 }
 
-var screenshot_server = 'http://studio.kyperjokki.fi:8886';
+//var screenshot_server = 'http://studio.kyperjokki.fi:8886';
 //var screenshot_server = 'http://192.168.100.47:8886';
 //var screenshot_server = 'http://10.20.209.3:8886';
+var screenshot_server = 'http://studio.kyperjokki.fi:8886'
+
 
 var positions = [[86, -50, 164, 180],
 		 [0, 0, 0, 90],
@@ -110,10 +112,6 @@ function init() {
 
     get_map();
 
-    //set image size could detech if mobile and use lower resolution
-    size = 512;
-    
-
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
 
     scene = new THREE.Scene();
@@ -130,21 +128,21 @@ function init() {
     cube.scale.x = - 1;
     scene.add(cube);
 
-    /* console.log('Detecting...'); */
-    /* var useWebgl = false */
+    console.log('Detecting...');
+    var useWebgl = false
 
-    /* if (Detector.webgl) { */
-    /* 	useWebgl = true */
-    /* 	console.log('Found webgl'); */
-    /* } else { */
-    /* 	console.log('Using canvas fallback'); */
-    /* } */
+    if (Detector.webgl) {
+    	useWebgl = true
+    	console.log('Found webgl');
+    } else {
+    	console.log('Using canvas fallback');
+    }
     
-    /* if (useWebgl) { */
-    /* 	renderer = new THREE.WebGLRenderer(); */
-    /* } else { */
-    /* 	renderer = new THREE.CanvasRenderer(); */
-    /* } */
+    if (useWebgl) {
+    	renderer = new THREE.WebGLRenderer();
+    } else {
+    	renderer = new THREE.CanvasRenderer();
+    }
 
     renderer = new THREE.CanvasRenderer(); 
     renderer.setSize(window.innerWidth, window.innerHeight);
