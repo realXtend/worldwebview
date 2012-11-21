@@ -51,8 +51,8 @@
 
         <div id="container"></div>
         <div id="info">realXtend WebView</div>
-	<div id="button"><form name="res"><button name="resolution" onClick="return handleClick();">Switch to highres</button></form></div>
-	<div id="map"><canvas id="mapCanvas" height="200" width="200"></canvas></div>
+        <div id="button"><form name="res"><button name="resolution" onClick="return handleClick();">Switch to highres</button></form></div>
+        <div id="map"><canvas id="mapCanvas" height="200" width="200"></canvas></div>
     
         <script src="three.js/build/three.min.js"></script>
         <script src="three.js/examples/js/Detector.js"></script>
@@ -76,9 +76,9 @@ var XMLHttpFactories = [
 
 var camera, scene, renderer;
 var texture_placeholder, loadMaterial,
-cube, isUserInteracting = false,
+cube, isUserInteracting = false, previewReady = false,
 onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-lon = 0, onMouseDownLon = 0, size = 512,
+lon = 0, onMouseDownLon = 0, size = 512, segments,
 lat = 0, onMouseDownLat = 0, mapImage = new Image(),
 phi = 0, theta = 0, mesh, mapLoaded = false, mapElement
 target = new THREE.Vector3();
@@ -93,8 +93,8 @@ for (var i = 0; i < 6; i++) {
 //var screenshot_server = 'http://studio.kyperjokki.fi:8886';
 //var screenshot_server = 'http://192.168.100.47:8886';
 //var screenshot_server = 'http://10.20.209.3:8886';
-var screenshot_server = 'http://studio.kyperjokki.fi:8886'
-
+//var screenshot_server = 'http://studio.kyperjokki.fi:8886'
+var screenshot_server = 'http://localhost:8886';
 
 var positions = [[86, -50, 164, 180],
 		 [0, 0, 0, 90],
@@ -105,10 +105,14 @@ var index = 0;
 init();
 
 function init() {
-
     var container;
 
     container = document.getElementById('container');
+    
+        
+    if (screen.width > 800) {
+
+    }
 
     get_map();
 
@@ -128,8 +132,9 @@ function init() {
     var texture = new THREE.Texture(texture_placeholder);
     loadMaterial = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
 
-
-    cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, 19, 19, 19, materials), new THREE.MeshFaceMaterial());
+    //FIXME
+    segments = 9;
+    cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
     cube.scale.x = - 1;
     scene.add(cube);
 
@@ -148,6 +153,10 @@ function init() {
     } else {
     	renderer = new THREE.CanvasRenderer();
     }
+    
+    //wait some time before loading the images
+    setTimeout(getPreviewImages, 4000);
+
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -299,6 +308,24 @@ function loadMaterials(baseUrl) {
 }
 
 
+function getPreviewImages() {
+    var url = screenshot_server + '/preview?';
+    for (var i = 0; i < positions.length; i++) {
+        var pos = positions[i];
+        url += 'p' + i + '=' + pos[0] + ',' + pos[1] + ',' + pos[2];
+        if (i < positions.length - 1) {
+            url += '&';
+        }
+    }
+    console.log('getting preview images from', url);
+    sendRequest(url, function(req) {
+        console.log('preview images are ready');
+        previewReady = true;
+    });
+
+}
+
+
 function onWindowResize() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -333,17 +360,23 @@ function changePlace(x, y, z, rotY) {
     url = screenshot_server + "/cubeimg?posX=" + x + "&posY=" + y + "&posZ=" + z;
     url += '&res=' + size;
 
-    for (var i = 0; i < 6; i ++) {
-        materials[i] = loadMaterial;
-    }
+    lon = rotY;
+    lat = 0;
 
+    if (previewReady) {
+        loadMaterials('http://localhost/tundra/' + x + ',' + y + ',' + z + '/');
+
+    } else {
+        for (var i = 0; i < 6; i ++) {
+            materials[i] = loadMaterial;
+        }
+    }
     sendRequest(url, function(req) {
 	var imageBaseUrl = req.responseText;
 	console.log('loading from ' + imageBaseUrl);
 	loadMaterials(imageBaseUrl);
     });
-    lon = rotY;
-    lat = 0;
+    
     render();
 }
 
