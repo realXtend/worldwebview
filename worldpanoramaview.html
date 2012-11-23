@@ -84,11 +84,7 @@ phi = 0, theta = 0, mesh, mapLoaded = false, mapElement
 target = new THREE.Vector3();
 
 var materials = [];
-for (var i = 0; i < 6; i++) {
-    var texture = new THREE.Texture( texture_placeholder );
-    var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: true } );
-    materials.push(material)
-}
+var previewMaterials = [];
 
 //var screenshot_server = 'http://studio.kyperjokki.fi:8886';
 //var screenshot_server = 'http://192.168.100.47:8886';
@@ -106,6 +102,16 @@ init();
 
 function init() {
     var container;
+
+    for (var i = 0; i < 6; i++) {
+        var texture = new THREE.Texture(texture_placeholder);
+        var material = new THREE.MeshBasicMaterial({map: texture, overdraw: true});
+        materials.push(material);
+    }
+
+    for (var i = 0; i < positions.length; i++) {
+        previewMaterials.push([]);
+    }
 
     container = document.getElementById('container');
     
@@ -319,10 +325,16 @@ function getPreviewImages() {
     }
     console.log('getting preview images from', url);
     sendRequest(url, function(req) {
-        console.log('preview images are ready');
         previewReady = true;
+        console.log('preview images are ready');
+        var fileNames = ['nx.png', 'px.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']
+        for (var i = 0; i < positions.length; i++) {
+            for (var j in fileNames) {
+                var pos = positions[i][0] + ',' + positions[i][1] + ',' + positions[i][2]
+	        previewMaterials[i][j] = loadTexture('http://localhost/tundra/' + pos + '/' + fileNames[j]);
+            }
+        }
     });
-
 }
 
 
@@ -362,10 +374,28 @@ function changePlace(x, y, z, rotY) {
 
     lon = rotY;
     lat = 0;
-
+    
     if (previewReady) {
-        loadMaterials('http://localhost/tundra/' + x + ',' + y + ',' + z + '/');
-
+        console.log('Preview images are ready');
+        var ready = true
+        if (previewMaterials[index].length == 6) {
+            for (var i = 0; i < 6; i++) {
+                if (previewMaterials[index][i] === undefined) {
+                    ready = false;
+                }
+            }
+        }
+        
+        if (ready) {
+            console.log("Got all preview materials");
+            for (i = 0; i < 6; i++) {
+                cube.geometry.materials[i] = previewMaterials[index][i];
+            }
+        } else {
+            var previewUrl = 'http://localhost/tundra/' + x + ',' + y + ',' + z + '/'
+            console.log('using non-loaded images from', previewUrl);
+            loadMaterials(previewUrl);
+        }
     } else {
         for (var i = 0; i < 6; i ++) {
             materials[i] = loadMaterial;
