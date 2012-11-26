@@ -51,7 +51,7 @@
 
         <div id="container"></div>
         <div id="info">realXtend WebView</div>
-        <div id="button"><form name="res"><button name="resolution" onClick="return handleClick();">Switch to highres</button></form></div>
+        <!--<div id="button"><form name="res"><button name="resolution" onClick="return handleClick();">Switch to highres</button></form></div>-->
         <div id="map"><canvas id="mapCanvas" height="200" width="200"></canvas></div>
     
         <script src="three.js/build/three.min.js"></script>
@@ -65,7 +65,8 @@
 // * LVM scene
 // * POIs for lvm skene
 // * arrow keys to move between POIs
-// * x or z axis rotation to pois aswel
+// * nicer transitions
+// * pinch zoom
 
 var XMLHttpFactories = [
     function () {return new XMLHttpRequest()},
@@ -78,9 +79,9 @@ var camera, scene, renderer;
 var texture_placeholder, loadMaterial,
 cube, isUserInteracting = false, previewReady = false,
 onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-lon = 0, onMouseDownLon = 0, size = 512, segments,
+lon = 0, onMouseDownLon = 0, size = 1024, segments = 17,
 lat = 0, onMouseDownLat = 0, mapImage = new Image(),
-phi = 0, theta = 0, mesh, mapLoaded = false, mapElement
+phi = 0, theta = 0, mesh, mapLoaded = false, mapElement,
 target = new THREE.Vector3();
 
 var materials = [];
@@ -92,16 +93,32 @@ var previewMaterials = [];
 //var screenshot_server = 'http://studio.kyperjokki.fi:8886'
 var screenshot_server = 'http://localhost:8886';
 
-var positions = [[86, -50, 164, 180],
-		 [0, 0, 0, 90],
-		 [0, -10, 0, 45],
-		 [106, -70, 122, 90]];
+// var positions = [[86, -50, 164, 180],
+// 		 [0, 0, 0, 90],
+// 		 [0, -10, 0, 45],
+// 		 [106, -70, 122, 90]];
+
+// positions are of the form [x, y, z, rotY, rotX] 
+var positions = [[31, 43, 46, 13, -19],
+                 [-159, 30, -67, -73, -11],
+                 [21, 9.5,-166, 150, 0],
+                 [126, 23, -135, 148, -16],
+                 [151, 22, 24, 60, -13],
+                ];
+
+// the y-coordinate of the map is used to get the map image right
+var mapCenter = [-2, 242, -28];
+var mapTopRightCorner = [223, 200];
+
 var index = 0;
 
 init();
 
 function init() {
     var container;
+
+    mapElement = document.getElementById('mapCanvas');
+
 
     for (var i = 0; i < 6; i++) {
         var texture = new THREE.Texture(texture_placeholder);
@@ -116,8 +133,9 @@ function init() {
     container = document.getElementById('container');
     
         
-    if (screen.width > 800) {
-
+    if (screen.width < 800) {
+        segments = 9;
+        size = 512;
     }
 
     get_map();
@@ -138,8 +156,6 @@ function init() {
     var texture = new THREE.Texture(texture_placeholder);
     loadMaterial = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
 
-    //FIXME
-    segments = 9;
     cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
     cube.scale.x = - 1;
     scene.add(cube);
@@ -168,7 +184,7 @@ function init() {
 
     container.appendChild(renderer.domElement);
 
-    changePlace(positions[0][0], positions[0][1], positions[0][2], positions[0][3]);
+    changePlace(positions[0][0], positions[0][1], positions[0][2], positions[0][3], positions[0][4]);
 
     container.addEventListener('mousedown', onDocumentMouseDown, false);
     container.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -180,7 +196,6 @@ function init() {
 
     document.addEventListener('keyup', onDocumentKeyUp, false);
 
-    mapElement = document.getElementById('mapCanvas');
     mapElement.addEventListener("click", onMapClick, false);
 
     window.addEventListener('resize', onWindowResize, false);
@@ -195,7 +210,7 @@ function handleClick() {
 	size = 512;
 	document.forms.res.resolution.innerHTML='Switch to highres';
     }
-    changePlace(positions[index][0], positions[index][1], positions[index][2], positions[index][3]);
+    changePlace(positions[index][0], positions[index][1], positions[index][2], positions[index][3], positions[index][4]);
     return false;
 }
 
@@ -231,20 +246,30 @@ function onMapClick(event) {
     if (hitIndex !== null) {
 	index = hitIndex;
 	var p = positions[index];
-	changePlace(p[0], p[1], p[2], p[3]);
+	changePlace(p[0], p[1], p[2], p[3], p[4]);
     }
 }
 
 function world2map(wCoords) {
     mCoords = new THREE.Vector2();
-    mCoords.x = -0.3787 * wCoords.x + 132.5680;
-    mCoords.y = -0.3855 * wCoords.y + 163.2289;
+    // mCoords.x = -0.3787 * wCoords.x + 132.5680;
+    // mCoords.y = -0.3855 * wCoords.y + 163.2289;
+    
+    var ax = (mapElement.width / 2) / (mapCenter[0] - mapTopRightCorner[0]);
+    var bx = -mapTopRightCorner[0] * ax;
+    
+    var ay = (mapElement.height / 2) / (mapCenter[2] - mapTopRightCorner[1]);
+    var by = -mapTopRightCorner[1] * ay;
+
+    mCoords.x = ax * wCoords.x + bx;
+    mCoords.y = ay * wCoords.y + by;
 
     return mCoords;
 }
 
 function get_map() {
-    var map_uri = screenshot_server + "/renderimg?posX=86&posY=164&posZ=164&ortX=0&ortY=0.7071067811865476&ortZ=0.7071067811865476&ortW=0"
+    //var map_uri = screenshot_server + "/renderimg?posX=86&posY=164&posZ=164&ortX=0&ortY=0.7071067811865476&ortZ=0.7071067811865476&ortW=0"
+    var map_uri = screenshot_server + "/renderimg?posX=" + mapCenter[0] + "&posY=" + mapCenter[1] + "&posZ=" + mapCenter[2] + "&ortX=0&ortY=0.7071067811865476&ortZ=0.7071067811865476&ortW=0"
     console.log("loading <a href=\"" + map_uri + "\">map</a>");
     //use indirect loading
     sendRequest(map_uri, function(req) {
@@ -271,9 +296,11 @@ function drawMap(x, y, angle) {
 
     //draw map
     if (mapLoaded) {
-	ctx.drawImage(mapImage, 0, 0, 200, 200);
+	ctx.drawImage(mapImage, 0, 0, mapElement.width, mapElement.height);
     }
 
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
@@ -367,13 +394,14 @@ function loadTexture(path) {
     return material;
 }
 
-function changePlace(x, y, z, rotY) {
+function changePlace(x, y, z, rotY, rotX) {
     console.log('Change place', x, y, z, rotY);   
     url = screenshot_server + "/cubeimg?posX=" + x + "&posY=" + y + "&posZ=" + z;
     url += '&res=' + size;
 
-    lon = rotY;
-    lat = 0;
+    // FIXME 180 is for Secret O scene
+    lon = 180 - rotY;
+    lat = rotX;
     
     if (previewReady) {
         console.log('Preview images are ready');
@@ -414,7 +442,7 @@ function onDocumentKeyUp(event) {
     if (event.keyCode == 78) {
 	index = (index + 1) % positions.length;
 	var p = positions[index]
-	changePlace(p[0], p[1], p[2], p[3]);
+	changePlace(p[0], p[1], p[2], p[3], p[4]);
     }
 }
 
