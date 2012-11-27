@@ -231,7 +231,7 @@ function init() {
     }
     
     //wait some time before loading the images
-    setTimeout(getPreviewImages, 4000);
+    setTimeout(getPreviewImages, 3000);
 
 
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -486,11 +486,8 @@ function changePlace(x, y, z, rotY, rotX) {
             console.log('using non-loaded images from', previewUrl);
             loadMaterials(previewUrl);
         }
-    } else {
-        for (var i = 0; i < 6; i++) {
-            materials[i] = loadTexture('temp.jpeg');
-        }
-    }
+    } 
+    
     sendRequest(url, function(req) {
 	var imageBaseUrl = req.responseText;
 	console.log('loading from ' + imageBaseUrl);
