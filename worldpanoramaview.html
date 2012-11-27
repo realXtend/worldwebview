@@ -131,8 +131,7 @@ var XMLHttpFactories = [
 ];
 
 var camera, scene, renderer;
-var texture_placeholder, loadMaterial,
-cube, isUserInteracting = false, previewReady = false,
+var texture_placeholder, cube, isUserInteracting = false, previewReady = false,
 onMouseDownMouseX = 0, onMouseDownMouseY = 0, initReady = 0,
 lon = 0, onMouseDownLon = 0, size = 1024, segments = 17,
 lat = 0, onMouseDownLat = 0, mapImage = new Image(),
@@ -154,7 +153,7 @@ var screenshot_server = 'http://localhost:8886';
 // 		 [106, -70, 122, 90]];
 
 // positions are of the form [x, y, z, rotY, rotX] 
-var positions = [[31, 43, 46, 13, -19],
+var positions = [[31, 46, 46, 13, -19],
                  [-159, 30, -67, -73, -11],
                  [21, 9.5,-166, 150, 0],
                  [126, 23, -135, 148, -16],
@@ -210,11 +209,8 @@ function init() {
     context.fillStyle = 'rgb(200, 200, 200)';
     context.fillRect(0, 0, texture_placeholder.width, texture_placeholder.height);
 
-    //make loading material
-    var texture = new THREE.Texture(texture_placeholder);
-    loadMaterial = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
+    cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
 
-    Cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
     cube.scale.x = - 1;
     scene.add(cube);
 
@@ -394,7 +390,7 @@ function loadMaterials(baseUrl) {
     console.log('Loading materials from ' + baseUrl);
     var fileNames = ['nx.png', 'px.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']
     for (var i in fileNames) {
-	cube.geometry.materials[i] = loadTexture(baseUrl + fileNames[i])
+	cube.geometry.materials[i] = loadTexture(baseUrl + fileNames[i], i)
     }
 }
 
@@ -433,11 +429,16 @@ function onWindowResize() {
     render();
 }
 
-function loadTexture(path) {
+function loadTexture(path, idx) {
 
-    var texture = new THREE.Texture(texture_placeholder);
-    var material = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
-
+    if (idx === undefined) {
+        var texture = new THREE.Texture(texture_placeholder);
+        var material = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
+    } else {
+        material = cube.geometry.materials[idx];
+        texture = material.map;
+    }
+    
     var image = new Image();
     image.crossOrigin = "anonymous";
 
@@ -486,8 +487,8 @@ function changePlace(x, y, z, rotY, rotX) {
             loadMaterials(previewUrl);
         }
     } else {
-        for (var i = 0; i < 6; i ++) {
-            materials[i] = loadMaterial;
+        for (var i = 0; i < 6; i++) {
+            materials[i] = loadTexture('temp.jpeg');
         }
     }
     sendRequest(url, function(req) {
