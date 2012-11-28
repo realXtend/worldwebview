@@ -40,6 +40,10 @@
 		right: 5px;
 		width: 200px;
 		height: 200px;
+                user-select: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -webkit-tap-highlight-color: transparent;
 	    }
 
             a {
@@ -91,6 +95,7 @@
         </div>
     
         <script src="three.js/build/three.min.js"></script>
+        <script src="hammer.js/hammer.js"></script>
         <script src="three.js/examples/js/Detector.js"></script>
 
 
@@ -132,9 +137,9 @@ var XMLHttpFactories = [
 
 var camera, scene, renderer;
 var texture_placeholder, cube, isUserInteracting = false, previewReady = false,
-onMouseDownMouseX = 0, onMouseDownMouseY = 0, initReady = 0,
+onMouseDownMouseX = 0, onMouseDownMouseY = 0, initReady = 0, dragStartPoint,
 lon = 0, onMouseDownLon = 0, size = 1024, segments = 17,
-lat = 0, onMouseDownLat = 0, mapImage = new Image(),
+lat = 0, onMouseDownLat = 0, mapImage = new Image(), hammer,
 phi = 0, theta = 0, mesh, mapLoaded = false, mapElement,
 target = new THREE.Vector3();
 
@@ -142,13 +147,15 @@ var materials = [];
 var previewMaterials = [];
 
 //var screenshot_server = 'http://studio.kyperjokki.fi:8886';
-//var screenshot_server = 'http://192.168.100.47:8886';
+var screenshot_server = 'http://192.168.100.47:8886';
 //var screenshot_server = 'http://10.20.209.3:8886';
 //var screenshot_server = 'http://studio.kyperjokki.fi:8886'
-var screenshot_server = 'http://localhost:8886';
+//var screenshot_server = 'http://localhost:8886';
+
+var image_host = 'http://192.168.100.47/tundra/'
 
 // var positions = [[86, -50, 164, 180],
-// 		 [0, 0, 0, 90],
+// 		[0, 0, 0, 90],
 // 		 [0, -10, 0, 45],
 // 		 [106, -70, 122, 90]];
 
@@ -173,7 +180,6 @@ function init() {
 
     mapElement = document.getElementById('mapCanvas');
 
-
     for (var i = 0; i < 6; i++) {
         var texture = new THREE.Texture(texture_placeholder);
         var material = new THREE.MeshBasicMaterial({map: texture, overdraw: true});
@@ -185,7 +191,7 @@ function init() {
     }
 
     container = document.getElementById('container');
-    
+    hammer = new Hammer(container);
         
     if (isMobile.any()) {
 	console('This is mobile');
@@ -240,13 +246,18 @@ function init() {
 
     changePlace(positions[0][0], positions[0][1], positions[0][2], positions[0][3], positions[0][4]);
 
+    hammer.ontransform = onContainerTransform
+    hammer.ondragstart = onContainerDragStart;
+    hammer.ondrag = onContainderDrag;
+
     container.addEventListener('mousedown', onDocumentMouseDown, false);
     container.addEventListener('mousemove', onDocumentMouseMove, false);
     container.addEventListener('mouseup', onDocumentMouseUp, false);
+
     container.addEventListener('mousewheel', onDocumentMouseWheel, false);
 
-    container.addEventListener('touchstart', onDocumentTouchStart, false);
-    container.addEventListener('touchmove', onDocumentTouchMove, false);
+    //container.addEventListener('touchstart', onDocumentTouchStart, false);
+    //container.addEventListener('touchmove', onDocumentTouchMove, false);
 
     document.addEventListener('keyup', onDocumentKeyUp, false);
 
@@ -270,6 +281,25 @@ function handleClick() {
 
 function d(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+function onContainerTransform(evt) {
+    var scale = evt.scale;
+
+    if (scale > 1.0) {
+        camera.fov -= (scale - 1) * 5;
+    }
+    
+    if (scale < 1.0) {
+        camera.fov += (1 - scale) * 20;
+    }
+
+    camera.fov = Math.min(75, camera.fov);
+    camera.fov = Math.max(15, camera.fov);
+
+    camera.updateProjectionMatrix();
+
+    render();
 }
 
 function onMapClick(event) {
@@ -412,7 +442,7 @@ function getPreviewImages() {
         for (var i = 0; i < positions.length; i++) {
             for (var j in fileNames) {
                 var pos = positions[i][0] + ',' + positions[i][1] + ',' + positions[i][2]
-	        previewMaterials[i][j] = loadTexture('http://localhost/tundra/' + pos + '/' + fileNames[j]);
+	        previewMaterials[i][j] = loadTexture(image_host + pos + '/' + fileNames[j]);
             }
         }       
     });
@@ -465,6 +495,10 @@ function changePlace(x, y, z, rotY, rotX) {
     lon = 180 - rotY;
     lat = rotX;
     
+    // reset zoom
+    camera.fov = 75;
+    camera.updateProjectionMatrix();
+
     if (previewReady) {
         console.log('Preview images are ready');
         var ready = true
@@ -482,7 +516,7 @@ function changePlace(x, y, z, rotY, rotX) {
                 cube.geometry.materials[i] = previewMaterials[index][i];
             }
         } else {
-            var previewUrl = 'http://localhost/tundra/' + x + ',' + y + ',' + z + '/'
+            var previewUrl = image_host + x + ',' + y + ',' + z + '/'
             console.log('using non-loaded images from', previewUrl);
             loadMaterials(previewUrl);
         }
@@ -540,6 +574,10 @@ function onDocumentMouseUp(event) {
 function onDocumentMouseWheel(event) {
 
     camera.fov -= event.wheelDeltaY * 0.05;
+
+    camera.fov = Math.min(75, camera.fov);
+    camera.fov = Math.max(15, camera.fov);
+
     camera.updateProjectionMatrix();
 
     render();
@@ -575,6 +613,20 @@ function onDocumentTouchMove(event) {
         render();
 
     }
+}
+
+function onContainerDragStart(event) {
+    dragStartPoint = event.position
+    onPointerDownLon = lon;
+    onPointerDownLat = lat;
+
+}
+
+function onContainderDrag(event) {
+    lon = (dragStartPoint.x - event.position.x) * 0.1 + onPointerDownLon;
+    lat = (event.position.y - dragStartPoint.y) * 0.1 + onPointerDownLat;
+
+    render();
 
 }
 
