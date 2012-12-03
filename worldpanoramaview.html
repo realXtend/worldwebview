@@ -61,12 +61,31 @@
     <script>
 
 // TODO
-// * detecting for canvas or webgl renderer
 // * LVM scene
 // * POIs for lvm skene
 // * arrow keys to move between POIs
 // * nicer transitions
-// * pinch zoom
+
+var isMobile = {
+    Android: function() {
+        return navigator.userAgent.match(/Android/i);
+    },
+    BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+    },
+    iOS: function() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    },
+    Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+    },
+    Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i);
+    },
+    any: function() {
+        return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
+    }
+};
 
 var XMLHttpFactories = [
     function () {return new XMLHttpRequest()},
@@ -133,9 +152,12 @@ function init() {
     container = document.getElementById('container');
     
         
-    if (screen.width < 800) {
+    if (isMobile.any()) {
+	console('This is mobile');
         segments = 9;
         size = 512;
+    } else {
+	console.log('Probably this is desktop');
     }
 
     get_map();
@@ -156,7 +178,7 @@ function init() {
     var texture = new THREE.Texture(texture_placeholder);
     loadMaterial = new THREE.MeshBasicMaterial({ map: texture, overdraw: true });
 
-    cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
+    Cube = new THREE.Mesh(new THREE.CubeGeometry(300, 300, 300, segments, segments, segments, materials), new THREE.MeshFaceMaterial());
     cube.scale.x = - 1;
     scene.add(cube);
 
