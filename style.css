@@ -1,0 +1,40 @@
+body {
+    background-color: rgb(200,200,200);
+    margin: 0px;
+    overflow: hidden;
+    position: relative;
+}
+
+#info {
+    position: absolute;
+    top: 0px; width: 100%;
+    color: #ffffff;
+    padding: 5px;
+    font-family:Monospace;
+    font-size:13px;
+    font-weight: bold;
+    text-align:center;
+}
+
+#button {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    font-family:Monospace;
+    font-size:13px;
+    font-weight: bold;
+    text-align:center;
+}
+
+#map {
+    position: absolute;
+    display: block;
+    top: 5px;
+    right: 5px;
+    width: 200px;
+    height: 200px;
+}
+
+a {
+    color: #ffffff;
+}
