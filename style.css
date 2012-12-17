@@ -6,20 +6,12 @@ body {
 }
 
 #info {
-    position: absolute;
-    top: 0px; width: 100%;
+    position: fixed;
+    top: 0px; width: 200px;
+    left: 50%;
+    margin-left: -100px;
     color: #ffffff;
-    padding: 5px;
-    font-family:Monospace;
-    font-size:13px;
-    font-weight: bold;
-    text-align:center;
-}
-
-#button {
-    position: absolute;
-    left: 5px;
-    top: 5px;
+    padding-top: 5px;
     font-family:Monospace;
     font-size:13px;
     font-weight: bold;
@@ -27,14 +19,64 @@ body {
 }
 
 #map {
-    position: absolute;
-    display: block;
+    position: relative;
     top: 5px;
     right: 5px;
+    float: right;
     width: 200px;
     height: 200px;
+    background:#fff;
+    filter: alpha(opacity=75); /* internet explorer */
+    -khtml-opacity: 0.75;      /* khtml, old safari */
+    -moz-opacity: 0.75;       /* mozilla, netscape */
+    opacity: 0.75;           /* fx, safari, opera */
 }
 
 a {
     color: #ffffff;
+}
+
+#maptoggle {
+    height: 20px;
+    width: 20px;
+    right: 0px;
+    display: block;
+    position: absolute;
+    background-color: black;
+}
+
+/*this is what we want the div to look like
+  when it is not showing*/
+div.loading-invisible{
+    /*make invisible*/
+    display:none;
+}
+
+/*this is what we want the div to look like
+  when it IS showing*/
+div.loading-visible{
+    /*make visible*/
+    display:block;
+
+    /*position it 200px down the screen*/
+    position:absolute;
+    top: 45%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    height: 75px;
+
+    /*in supporting browsers, make it
+      a little transparent*/
+    background:#fff;
+    filter: alpha(opacity=75); /* internet explorer */
+    -khtml-opacity: 0.75;      /* khtml, old safari */
+    -moz-opacity: 0.75;       /* mozilla, netscape */
+    opacity: 0.75;           /* fx, safari, opera */
+    border-top:1px solid #ddd;
+    border-bottom:1px solid #ddd;
+}
+
+div.loading-visible img {
+    padding-top: 30px;
 }
