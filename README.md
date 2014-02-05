@@ -1,4 +1,4 @@
-Live demo (boring scene): http://www.kadonnutkaupunki.net:8886/client
+There is no live demo for this currently, sorry. Hopefully we'll get one up soon again!
 
 Installation instructions
 =========================
